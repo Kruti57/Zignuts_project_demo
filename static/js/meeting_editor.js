@@ -6,8 +6,8 @@
 // Sample Demo Transcripts for rapid evaluation
 const SAMPLE_TRANSCRIPTS = {
   sprint: `Zignuts AI Platform Architecture & Sprint Deliverables Review
-Date: August 17, 2026
-Attendees: Sarah Connor (Tech Lead), David Kim (Backend Lead), Elena Rostova (Frontend Lead), Michael Chen (Product Manager)
+Date: 28 July 2026
+Attendees: Maria — Client Founder, James — Client Operations Manager, Neha — Zignuts Business Analyst, Arjun — Zignuts Technical Lead, Riya — Zignuts UI/UX Designer
 
 Sarah Connor (Tech Lead): Welcome everyone. Our main goal for this sprint is closing the customer onboarding bottleneck and finalizing the AI Meeting Notes integration.
 David Kim (Backend Lead): On the backend architecture, Sarah and I reviewed the schema. We decided to use MySQL with PyMySQL connection pooling for high throughput. I will finalize the database migration scripts and set up the DRF endpoints by Friday.
@@ -20,10 +20,10 @@ Elena Rostova: Michael, do we need multi-language transcript support in this pha
 Michael Chen: That is an open question. Let's verify customer demand before scoping it for next quarter.
 
 Action Items:
-- David Kim: Finalize database migrations and DRF endpoints by Friday (Priority: High)
-- Elena Rostova: Build modern SaaS dashboard and action tracker UI by Thursday (Priority: High)
-- Sarah Connor: Implement AI client wrapper and mock fallback validation by tomorrow (Priority: High)
-- Michael Chen: Check customer demand for multi-language transcript support by next week (Priority: Medium)
+- Arjun: Finalize database migrations and DRF endpoints by Friday (Priority: High)
+- Riya: Build modern SaaS dashboard and action tracker UI by Thursday (Priority: High)
+- Neha: Implement AI client wrapper and mock fallback validation by tomorrow (Priority: High)
+- James: Check customer demand for multi-language transcript support by next week (Priority: Medium)
 `,
 };
 
@@ -69,11 +69,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // 2. Drag & Drop / File Input Handling
+  // 2. Drag and Drop TXT file handling
   const dropzone = document.getElementById('upload-dropzone');
   const fileInput = document.getElementById('txt-file-input');
 
   if (dropzone && fileInput) {
+    dropzone.addEventListener('click', () => fileInput.click());
+
     ['dragenter', 'dragover'].forEach(eventName => {
       dropzone.addEventListener(eventName, (e) => {
         e.preventDefault();
@@ -135,7 +137,27 @@ document.addEventListener('DOMContentLoaded', () => {
         quill.setText(sampleText);
         if (hiddenInput) hiddenInput.value = quill.root.innerHTML;
         updateWordCount(sampleText);
-        showToast(`Loaded ${sampleKey} sample transcript!`, 'info');
+
+        // Pre-fill form fields with exact Zignuts demo data if empty
+        const titleInput = document.getElementById('meeting-title');
+        const dateInput = document.getElementById('meeting-date');
+        const typeSelect = document.getElementById('meeting-type');
+        const participantsInput = document.getElementById('meeting-participants');
+
+        if (titleInput && !titleInput.value) {
+          titleInput.value = 'Zignuts AI Platform Architecture & Sprint Deliverables Review';
+        }
+        if (dateInput && !dateInput.value) {
+          dateInput.value = '2026-07-28';
+        }
+        if (typeSelect && (!typeSelect.value || typeSelect.value === 'sprint')) {
+          typeSelect.value = 'client_req';
+        }
+        if (participantsInput && !participantsInput.value) {
+          participantsInput.value = 'Maria — Client Founder, James — Client Operations Manager, Neha — Zignuts Business Analyst, Arjun — Zignuts Technical Lead, Riya — Zignuts UI/UX Designer';
+        }
+
+        showToast(`Loaded Zignuts demo transcript & details!`, 'info');
       }
     });
   });

@@ -5,6 +5,7 @@ from django.utils import timezone
 
 class Meeting(models.Model):
     MEETING_TYPES = [
+        ('client_req', 'Client Requirement Discussion'),
         ('sprint', 'Sprint Planning'),
         ('standup', 'Daily Standup'),
         ('client', 'Client Review'),

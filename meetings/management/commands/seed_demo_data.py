@@ -26,14 +26,14 @@ class Command(BaseCommand):
 
         today = timezone.localdate()
 
-        # 2. Meeting 1: Sprint Planning
+        # 2. Meeting 1: Zignuts Assessment Primary Demo Meeting
         m1, _ = Meeting.objects.get_or_create(
             user=user,
-            title="Q3 Core Platform Sprint Planning & AI Architecture",
+            title="Zignuts AI Platform Architecture & Sprint Deliverables Review",
             defaults={
                 'date': today - timedelta(days=2),
                 'meeting_type': 'sprint',
-                'participants': 'Sarah Connor, David Kim, Elena Rostova, Michael Chen',
+                'participants': 'Sarah Connor (Tech Lead), David Kim (Backend Lead), Elena Rostova (Frontend Lead), Michael Chen (Product Manager)',
                 'transcript': """Sarah Connor (Tech Lead): Welcome everyone. Our main goal for this sprint is closing the customer onboarding bottleneck and finalizing the AI Meeting Notes integration.
 David Kim (Backend): On the backend architecture, Sarah and I reviewed the schema. We decided to use MySQL with PyMySQL connection pooling for high throughput. I will finalize the database migration scripts and set up the DRF endpoints by Friday.
 Elena Rostova (Frontend): On the frontend, I am building the modern SaaS dashboard and the Action Tracker. I will complete the Quill rich text editor and the dark mode theme by Thursday.

@@ -162,10 +162,15 @@
                 {% endif %}
               </div>
               <h6 class="fw-bold mb-1 text-main text-truncate">{{ meeting.title }}</h6>
+              {% if meeting.insights and meeting.insights.summary %}
+              <p class="text-muted smaller mb-1 text-truncate" style="max-width: 440px;">
+                <i class="bi bi-quote text-primary me-1"></i>{{ meeting.insights.summary|truncatechars:100 }}
+              </p>
+              {% endif %}
               <div class="text-muted smaller d-flex flex-wrap align-items-center gap-3">
                 <span><i class="bi bi-calendar3 me-1"></i> {{ meeting.date|date:"M j, Y" }}</span>
                 {% if meeting.participants %}
-                <span><i class="bi bi-people me-1"></i> {{ meeting.participants|truncatechars:35 }}</span>
+                <span><i class="bi bi-people me-1"></i> {{ meeting.participants|truncatechars:32 }}</span>
                 {% endif %}
               </div>
             </div>
@@ -192,6 +197,17 @@
         </div>
         {% endif %}
       </div>
+
+      {% if recent_meetings %}
+      <div class="card-footer bg-transparent border-top p-3 d-flex justify-content-between align-items-center">
+        <span class="smaller text-muted">
+          <i class="bi bi-stars text-primary me-1"></i> Automated AI summaries &amp; action extraction active
+        </span>
+        <a href="{% url 'meeting_create' %}" class="btn btn-sm btn-primary-gradient py-1 px-3 smaller btn-hover-effect">
+          <i class="bi bi-plus-lg me-1"></i> New Meeting
+        </a>
+      </div>
+      {% endif %}
     </div>
   </div>
 

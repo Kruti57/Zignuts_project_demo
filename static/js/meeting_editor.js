@@ -5,37 +5,25 @@
 
 // Sample Demo Transcripts for rapid evaluation
 const SAMPLE_TRANSCRIPTS = {
-  sprint: `Sprint Planning & Architecture Sync - Q3
+  sprint: `Zignuts AI Platform Architecture & Sprint Deliverables Review
 Date: August 17, 2026
-Attendees: Sarah Connor (Tech Lead), David Kim (Backend), Elena Rostova (Frontend), Michael Chen (Product)
+Attendees: Sarah Connor (Tech Lead), David Kim (Backend Lead), Elena Rostova (Frontend Lead), Michael Chen (Product Manager)
 
-Michael: Welcome everyone. Our main goal for this sprint is closing the customer onboarding bottleneck and finalizing the AI Meeting Notes integration.
-Sarah: On the backend architecture, David and I reviewed the schema. We decided to use MySQL with PyMySQL connection pooling for high throughput.
-David: Yes, I will finalize the database migration scripts and set up the DRF endpoints by Friday. I also need to make sure the JWT authentication is hardened.
-Elena: On the frontend, I am building the modern SaaS dashboard and the Action Tracker. I will complete the Quill rich text editor and the dark mode theme by Thursday.
-Michael: Great. Sarah, what about the AI service fallback?
-Sarah: We agreed that if the Gemini API key is missing or rate limited, the system must seamlessly fall back to an intelligent structured mock AI without throwing errors. I will write the AI client wrapper and validation tests by tomorrow.
-David: One concern: what if the external webhook experiences latency during action item sync?
-Sarah: That is a potential risk. We should add retry logic and timeout limits.
-Elena: Michael, do we need multi-language transcript support in this phase?
-Michael: That is an open question. Let's verify customer demand before scoping it for next quarter.
+Sarah Connor (Tech Lead): Welcome everyone. Our main goal for this sprint is closing the customer onboarding bottleneck and finalizing the AI Meeting Notes integration.
+David Kim (Backend Lead): On the backend architecture, Sarah and I reviewed the schema. We decided to use MySQL with PyMySQL connection pooling for high throughput. I will finalize the database migration scripts and set up the DRF endpoints by Friday.
+Elena Rostova (Frontend Lead): On the frontend, I am building the modern SaaS dashboard and the Action Tracker. I will complete the Quill rich text editor and the dark mode theme by Thursday.
+Michael Chen (Product Manager): Great. Sarah, what about the AI service fallback?
+Sarah Connor: We agreed that if the Gemini API key is missing or rate limited, the system must seamlessly fall back to an intelligent structured mock AI without throwing errors. I will write the AI client wrapper and validation tests by tomorrow.
+David Kim: One concern: what if the external webhook experiences latency during action item sync?
+Sarah Connor: That is a potential risk. We should add retry logic and timeout limits.
+Elena Rostova: Michael, do we need multi-language transcript support in this phase?
+Michael Chen: That is an open question. Let's verify customer demand before scoping it for next quarter.
 
 Action Items:
-- David: Finalize database migrations and DRF endpoints by Friday (Priority: High)
-- Elena: Build modern SaaS dashboard and action tracker UI by Thursday (Priority: High)
-- Sarah: Implement AI client wrapper and mock fallback by tomorrow (Priority: High)
-- Michael: Check customer demand for multi-language transcript support by next week (Priority: Medium)
-`,
-  client: `Client Quarterly Review & Delivery Roadmap
-Date: August 17, 2026
-Attendees: Alex Rivera (Account Exec), Rachel Green (Product Mgr), Tom Vance (Client Lead)
-
-Tom: Overall we are very satisfied with the alpha release. The automated action tracking has saved our team hours.
-Rachel: We agreed to proceed with Phase 2 rollout next month. We will prioritize the real-time notification alerts.
-Alex: I will prepare the revised Statement of Work (SOW) and send it for client signature by Wednesday.
-Rachel: I will coordinate with DevOps to ensure 99.9% uptime SLA compliance by next Monday.
-Tom: Could there be a delay if our security audit takes longer than 2 weeks?
-Rachel: That is a valid risk. We will schedule weekly security syncs to keep the audit on track.
+- David Kim: Finalize database migrations and DRF endpoints by Friday (Priority: High)
+- Elena Rostova: Build modern SaaS dashboard and action tracker UI by Thursday (Priority: High)
+- Sarah Connor: Implement AI client wrapper and mock fallback validation by tomorrow (Priority: High)
+- Michael Chen: Check customer demand for multi-language transcript support by next week (Priority: Medium)
 `,
 };
 

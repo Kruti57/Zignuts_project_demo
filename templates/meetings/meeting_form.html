@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - SyncMind AI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-10 animate-fade-up">
+
+    <!-- Back Navigation Link -->
+    <div class="mb-3">
+      <a href="{% if is_edit %}{% url 'meeting_detail' meeting.pk %}{% else %}{% url 'meeting_list' %}{% endif %}" class="text-muted text-decoration-none small d-inline-flex align-items-center gap-1">
+        <i class="bi bi-arrow-left"></i> Back to {% if is_edit %}Meeting Details{% else %}Meetings{% endif %}
+      </a>
+    </div>
+
+    <!-- Main Form Card -->
+    <div class="card card-custom p-4 p-md-5 shadow-md">
+      <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+        <div>
+          <h2 class="fw-bold mb-1 display-6">{{ title }}</h2>
+          <p class="text-muted small mb-0">Record or import your meeting transcript to extract automated AI summaries and action items.</p>
+        </div>
+        <div class="rounded-4 p-3 d-none d-sm-flex align-items-center justify-content-center text-white shadow-xs" style="background: var(--brand-gradient); width: 52px; height: 52px;">
+          <i class="bi bi-file-earmark-text-fill fs-3"></i>
+        </div>
+      </div>
+
+      <form method="POST" enctype="multipart/form-data" id="meeting-form">
+        {% csrf_token %}
+
+        <div class="row g-3 mb-4">
+          <!-- Title -->
+          <div class="col-12">
+            <label for="meeting-title" class="form-label fw-bold small">Meeting Title <span class="text-danger">*</span></label>
+            {{ form.title }}
+            {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors|first }}</div>{% endif %}
+          </div>
+
+          <!-- Date -->
+          <div class="col-12 col-md-6">
+            <label for="meeting-date" class="form-label fw-bold small">Meeting Date <span class="text-danger">*</span></label>
+            {{ form.date }}
+            {% if form.date.errors %}<div class="text-danger small mt-1">{{ form.date.errors|first }}</div>{% endif %}
+          </div>
+
+          <!-- Type -->
+          <div class="col-12 col-md-6">
+            <label for="meeting-type" class="form-label fw-bold small">Meeting Type</label>
+            {{ form.meeting_type }}
+            {% if form.meeting_type.errors %}<div class="text-danger small mt-1">{{ form.meeting_type.errors|first }}</div>{% endif %}
+          </div>
+
+          <!-- Participants -->
+          <div class="col-12">
+            <label for="meeting-participants" class="form-label fw-bold small">Participants (comma separated)</label>
+            {{ form.participants }}
+            <div class="form-text smaller text-muted">Example: Sarah Connor, David Kim, Elena Rostova, Michael Chen</div>
+            {% if form.participants.errors %}<div class="text-danger small mt-1">{{ form.participants.errors|first }}</div>{% endif %}
+          </div>
+        </div>
+
+        <!-- TXT Upload Dropzone & Quick Samples -->
+        <div class="mb-4">
+          <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-2 mb-2">
+            <label class="form-label fw-bold small mb-0">Meeting Transcript / Notes</label>
+            <!-- Quick Demo Transcripts -->
+            <div class="d-flex align-items-center gap-1">
+              <span class="text-muted smaller me-1">Quick Sample:</span>
+              <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 smaller rounded-pill insert-sample-btn" data-sample="sprint">
+                <i class="bi bi-code-slash me-1"></i> Sprint Sync
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-info py-0 px-2 smaller rounded-pill insert-sample-btn" data-sample="client">
+                <i class="bi bi-briefcase me-1"></i> Client Review
+              </button>
+            </div>
+          </div>
+
+          <!-- Drag and Drop Dropzone -->
+          <div class="upload-dropzone mb-3" id="upload-dropzone">
+            <div class="d-flex flex-column align-items-center gap-2">
+              <div class="rounded-circle p-2 bg-primary-subtle text-primary mb-1">
+                <i class="bi bi-cloud-arrow-up fs-2"></i>
+              </div>
+              <div class="fw-semibold small">Drag &amp; drop a .TXT transcript file here, or <label for="txt-file-input" class="text-primary text-decoration-underline" style="cursor: pointer;">browse files</label></div>
+              <span class="text-muted smaller">Supports raw meeting transcripts up to 5MB</span>
+              <input type="file" id="txt-file-input" name="txt_file" class="d-none" accept=".txt,text/plain">
+            </div>
+          </div>
+
+          <!-- Quill Rich Text Editor Container -->
+          <div id="quill-editor" class="rounded-3 shadow-xs"></div>
+          {{ form.transcript }}
+
+          <!-- Editor Footer Stats -->
+          <div class="d-flex justify-content-between align-items-center mt-2 px-1">
+            <span class="text-muted smaller">Quill.js Rich Text Active</span>
+            <div class="text-muted smaller">
+              <span id="editor-word-count">0 words</span> &bull; <span id="editor-char-count">0 chars</span>
+            </div>
+          </div>
+          {% if form.transcript.errors %}<div class="text-danger small mt-1">{{ form.transcript.errors|first }}</div>{% endif %}
+        </div>
+
+        <!-- Form Actions -->
+        <div class="d-flex justify-content-end align-items-center gap-3 pt-3 border-top">
+          <a href="{% if is_edit %}{% url 'meeting_detail' meeting.pk %}{% else %}{% url 'meeting_list' %}{% endif %}" class="btn btn-secondary-custom px-4">
+            Cancel
+          </a>
+          <button type="submit" class="btn btn-primary-gradient px-4 d-flex align-items-center gap-2 btn-hover-effect">
+            <i class="bi bi-check2-circle"></i> {% if is_edit %}Save Changes{% else %}Save &amp; Generate AI Insights{% endif %}
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/meeting_editor.js' %}"></script>
+{% endblock %}

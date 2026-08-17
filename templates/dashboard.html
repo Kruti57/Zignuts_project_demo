@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Executive Dashboard - SyncMind AI{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+  <!-- Welcome & Top Hero Banner -->
+  <div class="col-12 anim-fade-up">
+    <div class="card card-custom p-4 p-lg-5 border-0 shadow-md gradient-border-card">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-4">
+        <div>
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1 fw-semibold animate-pulse-glow">
+              <i class="bi bi-stars me-1"></i> AI Intelligence Active
+            </span>
+            <span class="text-muted small"><i class="bi bi-calendar3 me-1"></i> {{ today|date:"l, F j, Y" }}</span>
+          </div>
+          <h1 class="fw-bold mb-2 display-6">Welcome back, <span class="brand-gradient-text">{{ user.username }}</span></h1>
+          <p class="text-muted mb-0" style="max-width: 620px;">
+            Your centralized AI workspace for executive meeting intelligence, decision tracking, and cross-team action delivery.
+          </p>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2">
+          <a href="{% url 'meeting_create' %}" class="btn btn-primary-gradient d-flex align-items-center gap-2 shadow-sm btn-hover-effect">
+            <i class="bi bi-plus-circle-fill"></i> New Meeting
+          </a>
+          <a href="{% url 'action_tracker' %}" class="btn btn-secondary-custom d-flex align-items-center gap-2 btn-hover-effect">
+            <i class="bi bi-check2-square text-success"></i> Action Tracker
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stable, High-Performance Interactive Stat Cards Grid -->
+  <div class="col-12">
+    <div class="row g-3">
+
+      <!-- Card 1: Total Meetings -->
+      <div class="col-6 col-lg-3 anim-fade-up stagger-1">
+        <div class="stat-card hover-lift h-100 d-flex flex-column justify-content-between">
+          <div>
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="text-muted smaller fw-bold tracking-wide">TOTAL MEETINGS</span>
+              <div class="stat-icon-wrapper bg-primary-subtle text-primary">
+                <i class="bi bi-journal-richtext"></i>
+              </div>
+            </div>
+            <div class="stat-val text-main" data-counter-target="{{ total_meetings }}">{{ total_meetings }}</div>
+          </div>
+          <div class="mt-3 pt-2 border-top border-subtle">
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="badge bg-primary-subtle text-primary rounded-pill small"><span data-counter-target="{{ meeting_types|length }}">{{ meeting_types|length }}</span> Category{{ meeting_types|length|pluralize:"ies" }}</span>
+              <a href="{% url 'meeting_list' %}" class="small text-primary fw-bold text-decoration-none">View All &rarr;</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Total Actions -->
+      <div class="col-6 col-lg-3 anim-fade-up stagger-2">
+        <div class="stat-card hover-lift h-100 d-flex flex-column justify-content-between">
+          <div>
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="text-muted smaller fw-bold tracking-wide">TOTAL ACTIONS</span>
+              <div class="stat-icon-wrapper bg-info-subtle text-info">
+                <i class="bi bi-list-task"></i>
+              </div>
+            </div>
+            <div class="stat-val text-main" data-counter-target="{{ total_actions }}">{{ total_actions }}</div>
+          </div>
+          <div class="mt-3 pt-2 border-top border-subtle">
+            <div class="d-flex justify-content-between align-items-center small">
+              <div>
+                <span class="badge bg-primary-subtle text-primary rounded-pill smaller me-1"><span data-counter-target="{{ open_actions }}">{{ open_actions }}</span> open</span>
+                <span class="badge bg-info-subtle text-info rounded-pill smaller"><span data-counter-target="{{ in_progress_actions }}">{{ in_progress_actions }}</span> in progress</span>
+              </div>
+              <a href="{% url 'action_tracker' %}" class="small text-info fw-bold text-decoration-none">Board &rarr;</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Completed Actions -->
+      <div class="col-6 col-lg-3 anim-fade-up stagger-3">
+        <div class="stat-card hover-lift h-100 d-flex flex-column justify-content-between">
+          <div>
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="text-muted smaller fw-bold tracking-wide">COMPLETED</span>
+              <div class="stat-icon-wrapper bg-success-subtle text-success">
+                <i class="bi bi-check2-circle"></i>
+              </div>
+            </div>
+            <div class="d-flex align-items-baseline gap-2">
+              <div class="stat-val text-success" data-counter-target="{{ completed_actions }}">{{ completed_actions }}</div>
+              <span class="badge bg-success-subtle text-success rounded-pill small fw-bold"><span data-counter-target="{{ completion_rate }}" data-counter-suffix="%">{{ completion_rate }}%</span> rate</span>
+            </div>
+          </div>
+          <div class="mt-3 pt-2 border-top border-subtle">
+            <div class="d-flex justify-content-between smaller text-muted mb-1">
+              <span>Velocity</span>
+              <span class="fw-semibold text-success"><span data-counter-target="{{ completed_actions }}">{{ completed_actions }}</span> of <span data-counter-target="{{ total_actions }}">{{ total_actions }}</span> tasks</span>
+            </div>
+            <div class="progress" style="height: 5px; border-radius: 4px;">
+              <div class="progress-bar bg-success" role="progressbar" style="width: {{ completion_rate }}%;" aria-valuenow="{{ completion_rate }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: Overdue Actions -->
+      <div class="col-6 col-lg-3 anim-fade-up stagger-4">
+        <div class="stat-card hover-lift h-100 d-flex flex-column justify-content-between {% if overdue_actions > 0 %}border-danger-subtle bg-danger-subtle-light{% endif %}">
+          <div>
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <span class="{% if overdue_actions > 0 %}text-danger{% else %}text-muted{% endif %} smaller fw-bold tracking-wide">OVERDUE</span>
+              <div class="stat-icon-wrapper {% if overdue_actions > 0 %}bg-danger-subtle text-danger animate-pulse-glow{% else %}bg-secondary-subtle text-secondary{% endif %}">
+                <i class="bi bi-clock-history"></i>
+              </div>
+            </div>
+            <div class="stat-val {% if overdue_actions > 0 %}text-danger{% else %}text-main{% endif %}" data-counter-target="{{ overdue_actions }}">{{ overdue_actions }}</div>
+          </div>
+          <div class="mt-3 pt-2 border-top border-subtle">
+            {% if overdue_actions > 0 %}
+            <a href="{% url 'action_tracker' %}?overdue=true" class="small text-danger fw-bold text-decoration-none d-flex align-items-center justify-content-between">
+              <span><i class="bi bi-exclamation-triangle-fill me-1"></i> Resolve {{ overdue_actions }} overdue</span>
+              <span>&rarr;</span>
+            </a>
+            {% else %}
+            <div class="small text-success fw-medium d-flex align-items-center gap-1">
+              <i class="bi bi-shield-check"></i> All deliverables on schedule
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Left: Recent Meetings (Slide Left) & Right: Urgent Actions (Slide Right) -->
+  <div class="col-12 col-xl-7 anim-slide-left stagger-5">
+    <div class="card card-custom h-100 shadow-sm tilt-card" data-tilt="true" data-tilt-max="3">
+      <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+          <div class="rounded-3 p-1 text-white d-flex align-items-center justify-content-center shadow-xs" style="background: var(--brand-gradient); width: 28px; height: 28px;">
+            <i class="bi bi-journal-text" style="font-size: 0.9rem;"></i>
+          </div>
+          <h5 class="fw-bold mb-0">Recent Meeting Intelligence</h5>
+        </div>
+        <a href="{% url 'meeting_list' %}" class="btn btn-sm btn-secondary-custom btn-hover-effect">View All ({{ total_meetings }})</a>
+      </div>
+
+      <div class="card-body p-0">
+        {% if recent_meetings %}
+        <div class="list-group list-group-flush">
+          {% for meeting in recent_meetings %}
+          <a href="{% url 'meeting_detail' meeting.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3 border-bottom hover-lift-subtle bg-transparent">
+            <div class="me-3 text-truncate">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill small">
+                  {{ meeting.get_meeting_type_display }}
+                </span>
+                {% if meeting.has_insights %}
+                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small">
+                  <i class="bi bi-stars me-1"></i> Insights Ready
+                </span>
+                {% endif %}
+              </div>
+              <h6 class="fw-bold mb-1 text-main text-truncate">{{ meeting.title }}</h6>
+              <div class="text-muted smaller d-flex flex-wrap align-items-center gap-3">
+                <span><i class="bi bi-calendar3 me-1"></i> {{ meeting.date|date:"M j, Y" }}</span>
+                {% if meeting.participants %}
+                <span><i class="bi bi-people me-1"></i> {{ meeting.participants|truncatechars:35 }}</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="text-end text-nowrap">
+              <span class="badge bg-secondary-subtle text-secondary mb-1 d-block">
+                {{ meeting.total_actions }} Action{{ meeting.total_actions|pluralize }}
+              </span>
+              <span class="small text-primary fw-semibold"><i class="bi bi-arrow-right"></i></span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+          <div class="rounded-circle bg-primary-subtle text-primary p-4 d-inline-flex mb-3">
+            <i class="bi bi-calendar-plus fs-2"></i>
+          </div>
+          <h5 class="fw-bold mb-1">No Meetings Recorded Yet</h5>
+          <p class="text-muted small mb-3">Start by creating your first meeting and generate structured AI insights.</p>
+          <a href="{% url 'meeting_create' %}" class="btn btn-primary-gradient btn-sm btn-hover-effect">
+            <i class="bi bi-plus-lg me-1"></i> Create First Meeting
+          </a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Urgent Deliverables (Slide Right) -->
+  <div class="col-12 col-xl-5 anim-slide-right stagger-6">
+    <div class="card card-custom h-100 shadow-sm tilt-card" data-tilt="true" data-tilt-max="3">
+      <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+          <div class="rounded-3 p-1 text-white d-flex align-items-center justify-content-center shadow-xs" style="background: linear-gradient(135deg, #f59e0b, #ef4444); width: 28px; height: 28px;">
+            <i class="bi bi-lightning-charge-fill" style="font-size: 0.9rem;"></i>
+          </div>
+          <h5 class="fw-bold mb-0">Urgent Deliverables</h5>
+        </div>
+        <a href="{% url 'action_tracker' %}" class="btn btn-sm btn-secondary-custom btn-hover-effect">Tracker &rarr;</a>
+      </div>
+
+      <div class="card-body p-0">
+        {% if urgent_actions %}
+        <div class="list-group list-group-flush">
+          {% for act in urgent_actions %}
+          <div class="list-group-item p-3 border-bottom bg-transparent" id="action-row-{{ act.id }}">
+            <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+              <span class="badge {{ act.priority_badge_class }} small">
+                <span class="priority-dot priority-dot-{{ act.priority|lower }} me-1"></span>
+                {{ act.priority }}
+              </span>
+              {% if act.is_overdue %}
+              <span class="badge bg-danger text-white small animate-pulse-glow">
+                <i class="bi bi-clock-history me-1"></i> OVERDUE
+              </span>
+              {% elif act.due_date %}
+              <span class="small text-muted"><i class="bi bi-calendar3 me-1"></i> Due {{ act.due_date|date:"M j" }}</span>
+              {% else %}
+              <span class="small text-muted">No deadline</span>
+              {% endif %}
+            </div>
+
+            <p class="fw-semibold text-main mb-2 small task-description">{{ act.task }}</p>
+
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="smaller text-muted">
+                <i class="bi bi-person me-1"></i> {{ act.owner }}
+              </span>
+
+              <!-- Inline Status Dropdown with Instant Animated Feedback -->
+              <select class="form-select form-select-sm py-0 px-2 small inline-status-select" style="width: auto; height: 28px; font-size: 0.78rem;" data-action-id="{{ act.id }}" data-original-val="{{ act.status }}">
+                {% for st_val, st_lbl in act.STATUS_CHOICES %}
+                <option value="{{ st_val }}" {% if act.status == st_val %}selected{% endif %}>{{ st_lbl }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+          <div class="rounded-circle bg-success-subtle text-success p-4 d-inline-flex mb-3">
+            <i class="bi bi-check2-all fs-2"></i>
+          </div>
+          <h5 class="fw-bold mb-1">All Caught Up!</h5>
+          <p class="text-muted small mb-0">No pending or urgent action items right now.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/action_tracker.js' %}"></script>
+{% endblock %}

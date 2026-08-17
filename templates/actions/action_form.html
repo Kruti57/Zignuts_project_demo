@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - SyncMind AI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-md-8 col-lg-6 animate-fade-up">
+
+    <!-- Back Link -->
+    <div class="mb-3">
+      <a href="{% url 'action_tracker' %}" class="text-muted text-decoration-none small">
+        <i class="bi bi-arrow-left me-1"></i> Back to Action Tracker
+      </a>
+    </div>
+
+    <!-- Edit Form Card -->
+    <div class="card card-custom p-4 p-md-5">
+      <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+          <h4 class="fw-bold mb-1">{{ title }}</h4>
+          <p class="text-muted small mb-0">Update task details, ownership, deadline, priority, or status.</p>
+        </div>
+        <div class="rounded-circle bg-primary-subtle text-primary p-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+          <i class="bi bi-pencil-square fs-5"></i>
+        </div>
+      </div>
+
+      <form method="POST">
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Task Description <span class="text-danger">*</span></label>
+          {{ form.task }}
+          {% if form.task.errors %}<div class="text-danger small mt-1">{{ form.task.errors|first }}</div>{% endif %}
+        </div>
+
+        <!-- Associated Meeting Field (Manual Typing + Dropdown Selection) -->
+        <div class="mb-3">
+          <label class="form-label small fw-semibold d-flex justify-content-between align-items-center">
+            <span>Associated Meeting (Optional)</span>
+            <span class="smaller text-muted">Type custom meeting title or select from dropdown</span>
+          </label>
+          <div class="input-group">
+            {{ form.meeting_custom }}
+            {{ form.meeting }}
+            <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Pick an existing meeting">
+              <i class="bi bi-calendar-event text-primary"></i> <span class="smaller d-none d-md-inline">Select Meeting</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-lg p-2 rounded-3 border-0" style="max-height: 260px; overflow-y: auto; z-index: 1060; min-width: 280px; background: var(--bg-card);">
+              <li class="dropdown-header smaller text-uppercase fw-bold text-muted px-2 py-1">Your Meetings</li>
+              <li>
+                <button type="button" class="dropdown-item small rounded-2 d-flex align-items-center gap-2 py-2 px-2 text-muted" onclick="const inp = document.getElementById('action-meeting-custom'); if(inp){ inp.value = ''; inp.dispatchEvent(new Event('input')); inp.dispatchEvent(new Event('change')); }">
+                  <i class="bi bi-dash-circle text-secondary"></i>
+                  <span>None (Standalone Action)</span>
+                </button>
+              </li>
+              {% for m in form.user_meetings %}
+              <li>
+                <button type="button" class="dropdown-item small rounded-2 d-flex flex-column py-2 px-2" onclick="const inp = document.getElementById('action-meeting-custom'); if(inp){ inp.value = '{{ m.title|escapejs }}'; inp.dispatchEvent(new Event('input')); inp.dispatchEvent(new Event('change')); }">
+                  <span class="fw-semibold text-main text-truncate">{{ m.title }}</span>
+                  <span class="smaller text-muted"><i class="bi bi-calendar3 me-1"></i>{{ m.date|date:"M j, Y" }} &bull; {{ m.get_meeting_type_display }}</span>
+                </button>
+              </li>
+              {% empty %}
+              <li class="px-2 py-1 text-muted smaller fst-italic">No meetings recorded yet. You can type any meeting name above!</li>
+              {% endfor %}
+            </ul>
+          </div>
+          <datalist id="meeting-list-options">
+            {% for m in form.user_meetings %}
+            <option value="{{ m.title }}">{{ m.date|date:"M j, Y" }} ({{ m.get_meeting_type_display }})</option>
+            {% endfor %}
+          </datalist>
+          {% if form.meeting.errors %}<div class="text-danger small mt-1">{{ form.meeting.errors|first }}</div>{% endif %}
+          {% if form.meeting_custom.errors %}<div class="text-danger small mt-1">{{ form.meeting_custom.errors|first }}</div>{% endif %}
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-12 col-sm-6">
+            <label class="form-label small fw-semibold d-flex justify-content-between align-items-center">
+              <span>Assignee / Owner</span>
+              <span class="smaller text-muted">Type or pick from list</span>
+            </label>
+            <div class="input-group">
+              {{ form.owner }}
+              <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Pick from existing company employees">
+                <i class="bi bi-people-fill text-primary"></i> <span class="smaller d-none d-md-inline">Select</span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow-lg p-2 rounded-3 border-0" style="max-height: 250px; overflow-y: auto; z-index: 1060; background: var(--bg-card);">
+                <li class="dropdown-header smaller text-uppercase fw-bold text-muted px-2 py-1">Company Employees &amp; Assignees</li>
+                {% for name in form.assignee_list %}
+                <li>
+                  <button type="button" class="dropdown-item small rounded-2 select-owner-btn d-flex align-items-center gap-2 py-2 px-2" data-target-input="action-owner" data-owner-name="{{ name }}" onclick="const inp = document.getElementById('action-owner'); if(inp){ inp.value = '{{ name }}'; inp.dispatchEvent(new Event('input')); inp.dispatchEvent(new Event('change')); }">
+                    <span class="rounded-circle text-white d-flex align-items-center justify-content-center fw-bold shadow-xs" style="width: 24px; height: 24px; font-size: 0.72rem; background: var(--brand-gradient);">
+                      {{ name|first|upper }}
+                    </span>
+                    <span class="fw-medium text-main">{{ name }}</span>
+                  </button>
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
+            <datalist id="owner-list-options">
+              {% for name in form.assignee_list %}
+              <option value="{{ name }}"></option>
+              {% endfor %}
+            </datalist>
+            {% if form.owner.errors %}<div class="text-danger small mt-1">{{ form.owner.errors|first }}</div>{% endif %}
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label small fw-semibold">Due Date</label>
+            {{ form.due_date }}
+            {% if form.due_date.errors %}<div class="text-danger small mt-1">{{ form.due_date.errors|first }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-12 col-sm-6">
+            <label class="form-label small fw-semibold">Priority</label>
+            {{ form.priority }}
+            {% if form.priority.errors %}<div class="text-danger small mt-1">{{ form.priority.errors|first }}</div>{% endif %}
+          </div>
+          <div class="col-12 col-sm-6">
+            <label class="form-label small fw-semibold">Status</label>
+            {{ form.status }}
+            {% if form.status.errors %}<div class="text-danger small mt-1">{{ form.status.errors|first }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end align-items-center gap-2 pt-3 border-top">
+          <a href="{% url 'action_tracker' %}" class="btn btn-secondary-custom px-4">Cancel</a>
+          <button type="submit" class="btn btn-primary-gradient px-4">Update Action Item</button>
+        </div>
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,378 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Action Tracker - SyncMind AI{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+  <!-- Header & Action Ribbon -->
+  <div class="col-12 animate-fade-up">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+      <div>
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 fw-semibold">
+            <i class="bi bi-check2-circle me-1"></i> Central Delivery Board
+          </span>
+        </div>
+        <h1 class="fw-bold mb-1 display-6">Action Tracker</h1>
+        <p class="text-muted small mb-0">Manage, filter, and track all meeting deliverables and team tasks in real-time.</p>
+      </div>
+
+      <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'action_export_csv' %}" class="btn btn-secondary-custom d-flex align-items-center gap-2 btn-sm">
+          <i class="bi bi-file-earmark-spreadsheet text-success"></i> Export CSV
+        </a>
+        <button type="button" class="btn btn-primary-gradient d-flex align-items-center gap-2 btn-sm shadow-sm btn-hover-effect" data-bs-toggle="modal" data-bs-target="#trackerAddActionModal">
+          <i class="bi bi-plus-circle-fill"></i> Add Action Item
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tracker Stats Summary Ribbon -->
+  <div class="col-12 animate-fade-up stagger-1">
+    <div class="row g-2 text-center">
+      <div class="col-4 col-md-2">
+        <div class="card card-custom p-3 h-100 hover-lift-subtle">
+          <span class="text-muted smaller fw-bold tracking-wide">TOTAL</span>
+          <h3 class="fw-bold mb-0 text-main mt-1" id="stat-total-actions" data-counter-target="{{ stats.total }}">{{ stats.total }}</h3>
+        </div>
+      </div>
+      <div class="col-4 col-md-2">
+        <div class="card card-custom p-3 h-100 hover-lift-subtle">
+          <span class="text-primary smaller fw-bold tracking-wide">OPEN</span>
+          <h3 class="fw-bold mb-0 text-primary mt-1" id="stat-open-actions" data-counter-target="{{ stats.open }}">{{ stats.open }}</h3>
+        </div>
+      </div>
+      <div class="col-4 col-md-2">
+        <div class="card card-custom p-3 h-100 hover-lift-subtle">
+          <span class="text-info smaller fw-bold tracking-wide">IN PROGRESS</span>
+          <h3 class="fw-bold mb-0 text-info mt-1" id="stat-inprogress-actions" data-counter-target="{{ stats.in_progress }}">{{ stats.in_progress }}</h3>
+        </div>
+      </div>
+      <div class="col-4 col-md-2">
+        <div class="card card-custom p-3 h-100 hover-lift-subtle">
+          <span class="text-danger smaller fw-bold tracking-wide">BLOCKED</span>
+          <h3 class="fw-bold mb-0 text-danger mt-1" data-counter-target="{{ stats.blocked }}">{{ stats.blocked }}</h3>
+        </div>
+      </div>
+      <div class="col-4 col-md-2">
+        <div class="card card-custom p-3 h-100 hover-lift-subtle">
+          <span class="text-success smaller fw-bold tracking-wide">COMPLETED</span>
+          <h3 class="fw-bold mb-0 text-success mt-1" id="stat-completed-actions" data-counter-target="{{ stats.completed }}">{{ stats.completed }}</h3>
+        </div>
+      </div>
+      <div class="col-4 col-md-2">
+        <div class="card card-custom p-3 h-100 hover-lift-subtle {% if stats.overdue > 0 %}border-danger-subtle{% endif %}">
+          <span class="{% if stats.overdue > 0 %}text-danger{% else %}text-muted{% endif %} smaller fw-bold tracking-wide">OVERDUE</span>
+          <h3 class="fw-bold mb-0 mt-1 {% if stats.overdue > 0 %}text-danger animate-pulse-glow{% else %}text-main{% endif %}" id="stat-overdue-actions" data-counter-target="{{ stats.overdue }}">{{ stats.overdue }}</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Multi-Filter Toolbar Card -->
+  <div class="col-12 animate-fade-up stagger-2">
+    <div class="card card-custom p-3 shadow-xs">
+      <form method="GET" action="{% url 'action_tracker' %}" class="row g-2 align-items-center">
+
+        <!-- Live Instant Search -->
+        <div class="col-12 col-lg-3">
+          <div class="input-group">
+            <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="bi bi-search"></i></span>
+            <input type="text" name="q" value="{{ query }}" id="tracker-search-input" class="form-control border-start-0" placeholder="Search task, owner, meeting...">
+          </div>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="col-6 col-sm-4 col-lg-2">
+          <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">All Statuses</option>
+            {% for st_code, st_label in status_choices %}
+            <option value="{{ st_code }}" {% if selected_status == st_code %}selected{% endif %}>{{ st_label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Priority Filter -->
+        <div class="col-6 col-sm-4 col-lg-2">
+          <select name="priority" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">All Priorities</option>
+            {% for pr_code, pr_label in priority_choices %}
+            <option value="{{ pr_code }}" {% if selected_priority == pr_code %}selected{% endif %}>{{ pr_label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Owner Filter -->
+        <div class="col-6 col-sm-4 col-lg-2">
+          <select name="owner" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">All Assignees</option>
+            {% for owner_name in distinct_owners %}
+            <option value="{{ owner_name }}" {% if selected_owner == owner_name %}selected{% endif %}>{{ owner_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Overdue Checkbox & Submit -->
+        <div class="col-6 col-lg-3 d-flex align-items-center justify-content-between gap-2">
+          <div class="form-check form-switch mb-0">
+            <input class="form-check-input" type="checkbox" name="overdue" value="true" id="overdueSwitch" {% if overdue_only %}checked{% endif %} onchange="this.form.submit()">
+            <label class="form-check-label small text-danger fw-semibold" for="overdueSwitch">Overdue Only</label>
+          </div>
+
+          <div class="d-flex gap-1">
+            <button type="submit" class="btn btn-primary-gradient btn-sm px-3 btn-hover-effect">Filter</button>
+            {% if query or selected_status or selected_priority or selected_owner or selected_due_date or overdue_only %}
+            <a href="{% url 'action_tracker' %}" class="btn btn-secondary-custom btn-sm" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+            {% endif %}
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- Central Actions Table Card -->
+  <div class="col-12 animate-fade-up stagger-3">
+    <div class="card card-custom overflow-hidden">
+      <div class="table-responsive">
+        <table class="table tracker-table align-middle mb-0">
+          <thead>
+            <tr>
+              <th style="width: 35%;">Task &amp; Deliverable</th>
+              <th style="width: 18%;">Meeting Context</th>
+              <th style="width: 13%;">Assignee</th>
+              <th style="width: 12%;">Due Date</th>
+              <th style="width: 10%;">Priority</th>
+              <th style="width: 12%;">Status</th>
+              <th class="text-end pe-3" style="width: 8%;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tracker-table-body">
+            {% if actions %}
+              {% for act in actions %}
+              <tr class="tracker-row {% if act.status == 'COMPLETED' %}opacity-75{% endif %}" id="action-row-{{ act.id }}">
+                <!-- Task -->
+                <td>
+                  <div class="fw-semibold text-main task-description {% if act.status == 'COMPLETED' %}text-decoration-line-through text-muted{% endif %}">
+                    {{ act.task }}
+                  </div>
+                </td>
+
+                <!-- Meeting -->
+                <td>
+                  {% if act.meeting %}
+                  <a href="{% url 'meeting_detail' act.meeting.id %}" class="small text-decoration-none text-primary fw-medium text-truncate d-inline-block" style="max-width: 180px;">
+                    <i class="bi bi-link-45deg me-1"></i>{{ act.meeting.title }}
+                  </a>
+                  {% else %}
+                  <span class="badge bg-secondary-subtle text-secondary small rounded-pill">Standalone</span>
+                  {% endif %}
+                </td>
+
+                <!-- Assignee / Owner -->
+                <td>
+                  <span class="badge bg-secondary-subtle text-secondary rounded-pill small px-2 py-1">
+                    <i class="bi bi-person me-1"></i>{{ act.owner }}
+                  </span>
+                </td>
+
+                <!-- Due Date & Overdue Tag -->
+                <td>
+                  {% if act.is_overdue %}
+                  <div class="d-flex flex-column">
+                    <span class="text-danger fw-bold small"><i class="bi bi-calendar-x me-1"></i>{{ act.due_date|date:"M j, Y" }}</span>
+                    <span class="badge bg-danger text-white smaller mt-1 animate-pulse-glow" style="width: fit-content;">OVERDUE</span>
+                  </div>
+                  {% elif act.due_date %}
+                  <span class="small text-muted"><i class="bi bi-calendar3 me-1"></i>{{ act.due_date|date:"M j, Y" }}</span>
+                  {% else %}
+                  <span class="text-subtle smaller fst-italic">Not specified</span>
+                  {% endif %}
+                </td>
+
+                <!-- Priority -->
+                <td>
+                  <span class="badge {{ act.priority_badge_class }} small">
+                    <span class="priority-dot priority-dot-{{ act.priority|lower }} me-1"></span>
+                    {{ act.priority }}
+                  </span>
+                </td>
+
+                <!-- Status (Interactive Select Dropdown) -->
+                <td>
+                  <select class="form-select form-select-sm py-1 px-2 small inline-status-select" data-action-id="{{ act.id }}" data-original-val="{{ act.status }}">
+                    {% for st_val, st_lbl in act.STATUS_CHOICES %}
+                    <option value="{{ st_val }}" {% if act.status == st_val %}selected{% endif %}>{{ st_lbl }}</option>
+                    {% endfor %}
+                  </select>
+                </td>
+
+                <!-- Row Actions -->
+                <td class="text-end pe-3">
+                  <div class="d-flex justify-content-end gap-1">
+                    <a href="{% url 'action_edit' act.pk %}" class="btn btn-sm btn-secondary-custom p-1" style="width: 30px; height: 30px;" title="Edit Action">
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                    <button type="button" class="btn btn-sm btn-outline-danger p-1" style="width: 30px; height: 30px;" title="Delete Action" data-bs-toggle="modal" data-bs-target="#globalDeleteModal" data-delete-url="{% url 'action_delete' act.pk %}" data-item-name="{{ act.task|truncatechars:25 }}">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="7" class="text-center py-5">
+                  <div class="rounded-circle bg-primary-subtle text-primary p-3 d-inline-flex mb-3">
+                    <i class="bi bi-check2-square fs-3"></i>
+                  </div>
+                  <h6 class="fw-bold mb-1">No Action Items Found</h6>
+                  <p class="text-muted small mb-3">No actions match your current search/filter settings.</p>
+                  <button type="button" class="btn btn-primary-gradient btn-sm btn-hover-effect" data-bs-toggle="modal" data-bs-target="#trackerAddActionModal">
+                    <i class="bi bi-plus-lg me-1"></i> Add Action Item
+                  </button>
+                </td>
+              </tr>
+            {% endif %}
+            <tr id="no-search-results-row" style="display: none;">
+              <td colspan="7" class="text-center py-4 text-muted small">
+                No action items match the live search query.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Central Add Action Modal -->
+<div class="modal fade" id="trackerAddActionModal" tabindex="-1" aria-labelledby="trackerAddActionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content card-custom border-0 shadow-lg">
+      <form method="POST" action="{% url 'action_create' %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{% url 'action_tracker' %}">
+
+        <div class="modal-header border-bottom">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-3 p-1 text-white d-flex align-items-center justify-content-center shadow-xs" style="background: var(--brand-gradient); width: 28px; height: 28px;">
+              <i class="bi bi-check2-square" style="font-size: 0.9rem;"></i>
+            </div>
+            <h5 class="modal-title fw-bold" id="trackerAddActionModalLabel">New Action Deliverable</h5>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body py-3">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Task Description <span class="text-danger">*</span></label>
+            {{ form.task }}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold d-flex justify-content-between align-items-center">
+              <span>Associated Meeting (Optional)</span>
+              <span class="smaller text-muted">Type title or pick from dropdown</span>
+            </label>
+            <div class="input-group">
+              <input type="text" name="meeting_custom" id="modal-meeting-custom" class="form-control" placeholder="Type or pick meeting..." list="modal-meeting-list-options" autocomplete="off">
+              {{ form.meeting }}
+              <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Pick an existing meeting">
+                <i class="bi bi-calendar-event text-primary"></i> <span class="smaller d-none d-sm-inline">Select</span>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow-lg p-2 rounded-3 border-0" style="max-height: 250px; overflow-y: auto; z-index: 1060; min-width: 260px; background: var(--bg-card);">
+                <li class="dropdown-header smaller text-uppercase fw-bold text-muted px-2 py-1">Your Meetings</li>
+                <li>
+                  <button type="button" class="dropdown-item small rounded-2 d-flex align-items-center gap-2 py-2 px-2 text-muted" onclick="const inp = document.getElementById('modal-meeting-custom'); if(inp){ inp.value = ''; inp.dispatchEvent(new Event('input')); inp.dispatchEvent(new Event('change')); }">
+                    <i class="bi bi-dash-circle text-secondary"></i>
+                    <span>None (Standalone Action)</span>
+                  </button>
+                </li>
+                {% for m in user_meetings %}
+                <li>
+                  <button type="button" class="dropdown-item small rounded-2 d-flex flex-column py-2 px-2" onclick="const inp = document.getElementById('modal-meeting-custom'); if(inp){ inp.value = '{{ m.title|escapejs }}'; inp.dispatchEvent(new Event('input')); inp.dispatchEvent(new Event('change')); }">
+                    <span class="fw-semibold text-main text-truncate">{{ m.title }}</span>
+                    <span class="smaller text-muted"><i class="bi bi-calendar3 me-1"></i>{{ m.date|date:"M j, Y" }}</span>
+                  </button>
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
+            <datalist id="modal-meeting-list-options">
+              {% for m in user_meetings %}
+              <option value="{{ m.title }}">{{ m.date|date:"M j, Y" }}</option>
+              {% endfor %}
+            </datalist>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold d-flex justify-content-between align-items-center">
+                <span>Assignee / Owner</span>
+              </label>
+              <div class="input-group">
+                {{ form.owner }}
+                <button class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Pick employee">
+                  <i class="bi bi-people-fill text-primary"></i> <span class="smaller d-none d-sm-inline">Select</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-lg p-2 rounded-3 border-0" style="max-height: 240px; overflow-y: auto; z-index: 1060; background: var(--bg-card);">
+                  <li class="dropdown-header smaller text-uppercase fw-bold text-muted px-2 py-1">Company Employees</li>
+                  {% for name in distinct_owners %}
+                  <li>
+                    <button type="button" class="dropdown-item small rounded-2 select-owner-btn d-flex align-items-center gap-2 py-2 px-2" data-target-input="action-owner" data-owner-name="{{ name }}" onclick="const inp = this.closest('.input-group')?.querySelector('input') || document.getElementById('action-owner'); if(inp){ inp.value = '{{ name }}'; inp.dispatchEvent(new Event('input')); inp.dispatchEvent(new Event('change')); }">
+                      <span class="rounded-circle text-white d-flex align-items-center justify-content-center fw-bold shadow-xs" style="width: 22px; height: 22px; font-size: 0.7rem; background: var(--brand-gradient);">
+                        {{ name|first|upper }}
+                      </span>
+                      <span class="fw-medium text-main">{{ name }}</span>
+                    </button>
+                  </li>
+                  {% endfor %}
+                </ul>
+              </div>
+              {% if distinct_owners %}
+              <div class="d-flex flex-wrap align-items-center gap-1 mt-1">
+                <span class="smaller text-muted me-1">Quick:</span>
+                {% for name in distinct_owners|slice:":4" %}
+                <button type="button" class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill py-1 px-2 select-owner-btn" style="cursor: pointer;" data-target-input="action-owner" data-owner-name="{{ name }}" onclick="const inp = document.getElementById('action-owner'); if(inp){ inp.value = '{{ name }}'; inp.dispatchEvent(new Event('input')); inp.dispatchEvent(new Event('change')); }">
+                  {{ name }}
+                </button>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold">Due Date</label>
+              {{ form.due_date }}
+            </div>
+          </div>
+
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Priority</label>
+              {{ form.priority }}
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Status</label>
+              {{ form.status }}
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer border-top">
+          <button type="button" class="btn btn-secondary-custom btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary-gradient btn-sm px-4 btn-hover-effect">Create Action Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/action_tracker.js' %}"></script>
+{% endblock %}

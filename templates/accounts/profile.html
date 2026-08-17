@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}User Profile - SyncMind AI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-md-8 col-lg-6 animate-fade-up">
+
+    <div class="card card-custom p-4 p-md-5">
+      <div class="d-flex align-items-center gap-3 pb-4 border-bottom mb-4">
+        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold fs-3" style="width: 64px; height: 64px; background: var(--brand-gradient) !important;">
+          {{ user.username|first|upper }}
+        </div>
+        <div>
+          <h4 class="fw-bold mb-1 text-main">{{ user.username }}</h4>
+          <span class="text-muted small"><i class="bi bi-envelope me-1"></i>{{ user.email|default:"No email associated" }}</span>
+        </div>
+      </div>
+
+      <h6 class="fw-bold text-main mb-3">Workspace Activity Overview</h6>
+      <div class="row g-3 mb-4">
+        <div class="col-4">
+          <div class="card card-custom p-3 text-center bg-card-alt">
+            <span class="text-muted smaller">MEETINGS</span>
+            <h4 class="fw-bold mb-0 text-primary">{{ meetings_count }}</h4>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="card card-custom p-3 text-center bg-card-alt">
+            <span class="text-muted smaller">ACTIONS</span>
+            <h4 class="fw-bold mb-0 text-info">{{ actions_count }}</h4>
+          </div>
+        </div>
+        <div class="col-4">
+          <div class="card card-custom p-3 text-center bg-card-alt">
+            <span class="text-muted smaller">COMPLETED</span>
+            <h4 class="fw-bold mb-0 text-success">{{ completed_actions }}</h4>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+        <a href="{% url 'dashboard' %}" class="btn btn-secondary-custom btn-sm">
+          <i class="bi bi-arrow-left me-1"></i> Dashboard
+        </a>
+        <a href="{% url 'logout' %}" class="btn btn-outline-danger btn-sm">
+          <i class="bi bi-box-arrow-right me-1"></i> Log Out
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

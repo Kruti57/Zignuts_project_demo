@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Meetings - SyncMind AI{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+  <!-- Header & Action Bar -->
+  <div class="col-12 anim-fade-up">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+      <div>
+        <h1 class="fw-bold mb-1 display-6">Meeting Notes</h1>
+        <p class="text-muted small mb-0">Record transcripts, review AI insights, and track decisions across {{ total_meetings }} meeting{{ total_meetings|pluralize }}.</p>
+      </div>
+
+      <a href="{% url 'meeting_create' %}" class="btn btn-primary-gradient d-flex align-items-center gap-2 shadow-sm btn-hover-effect">
+        <i class="bi bi-plus-circle-fill"></i> New Meeting
+      </a>
+    </div>
+  </div>
+
+  <!-- Search & Filter Card -->
+  <div class="col-12 anim-fade-up stagger-1">
+    <div class="card card-custom p-3 shadow-xs">
+      <form method="GET" action="{% url 'meeting_list' %}" class="row g-2 align-items-center">
+        <!-- Search Input -->
+        <div class="col-12 col-md-5">
+          <div class="input-group">
+            <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="bi bi-search"></i></span>
+            <input type="text" name="q" value="{{ query }}" class="form-control border-start-0" placeholder="Search by title, participant, transcript...">
+          </div>
+        </div>
+
+        <!-- Meeting Type Filter -->
+        <div class="col-6 col-md-3">
+          <select name="type" class="form-select">
+            <option value="">All Meeting Types</option>
+            {% for code, label in meeting_types %}
+            <option value="{{ code }}" {% if selected_type == code %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Date Filter -->
+        <div class="col-6 col-md-2">
+          <input type="date" name="date" value="{{ date_filter }}" class="form-control" title="Filter by date">
+        </div>
+
+        <!-- Filter Submit & Reset -->
+        <div class="col-12 col-md-2 d-flex gap-2">
+          <button type="submit" class="btn btn-primary-gradient btn-sm flex-grow-1 btn-hover-effect">Filter</button>
+          {% if query or selected_type or date_filter %}
+          <a href="{% url 'meeting_list' %}" class="btn btn-secondary-custom btn-sm" title="Clear Filters"><i class="bi bi-x-lg"></i></a>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Meetings List Grid with Alternating 3D Tilt Cards -->
+  <div class="col-12">
+    {% if meetings %}
+    <div class="row g-3">
+      {% for meeting in meetings %}
+      <div class="col-12 col-md-6 col-xl-4 {% if forloop.counter|divisibleby:2 %}anim-slide-right{% else %}anim-slide-left{% endif %} stagger-{{ forloop.counter|slice:':1'|default:'2' }}">
+        <div class="card card-custom h-100 tilt-card d-flex flex-column shadow-sm" data-tilt="true" data-tilt-max="5">
+          <div class="card-body p-4 flex-grow-1 tilt-inner">
+            <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill small">
+                {{ meeting.get_meeting_type_display }}
+              </span>
+              <span class="text-muted smaller"><i class="bi bi-calendar3 me-1"></i>{{ meeting.date|date:"M j, Y" }}</span>
+            </div>
+
+            <h4 class="fw-bold text-main mb-2 fs-5">
+              <a href="{% url 'meeting_detail' meeting.pk %}" class="text-decoration-none text-main stretched-link-alt">
+                {{ meeting.title }}
+              </a>
+            </h4>
+
+            {% if meeting.participants_list %}
+            <div class="d-flex flex-wrap gap-1 mb-3">
+              {% for p in meeting.participants_list|slice:":3" %}
+              <span class="badge bg-secondary-subtle text-secondary small rounded-pill">
+                <i class="bi bi-person me-1"></i>{{ p }}
+              </span>
+              {% endfor %}
+              {% if meeting.participants_list|length > 3 %}
+              <span class="badge bg-secondary-subtle text-secondary small rounded-pill">+{{ meeting.participants_list|length|add:"-3" }} more</span>
+              {% endif %}
+            </div>
+            {% endif %}
+
+            <p class="text-muted small mb-0 line-clamp-2">
+              {% if meeting.insights %}
+                {{ meeting.insights.summary|truncatechars:120 }}
+              {% elif meeting.transcript %}
+                {{ meeting.transcript|striptags|truncatechars:120 }}
+              {% else %}
+                <span class="fst-italic text-subtle">No transcript recorded yet.</span>
+              {% endif %}
+            </p>
+          </div>
+
+          <!-- Card Footer -->
+          <div class="card-footer bg-transparent border-top p-3 d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+              {% if meeting.has_insights %}
+              <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small" title="AI Insights Available">
+                <i class="bi bi-stars me-1"></i> Insights Ready
+              </span>
+              {% else %}
+              <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill small" title="AI Pending">
+                <i class="bi bi-clock me-1"></i> AI Pending
+              </span>
+              {% endif %}
+
+              <span class="badge bg-secondary-subtle text-secondary rounded-pill small">
+                {{ meeting.total_actions }} Action{{ meeting.total_actions|pluralize }}
+              </span>
+            </div>
+
+            <div class="dropdown">
+              <button class="btn btn-sm btn-secondary-custom rounded-circle p-1" style="width: 30px; height: 30px;" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-three-dots-vertical"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 p-1">
+                <li><a class="dropdown-item small rounded-2" href="{% url 'meeting_detail' meeting.pk %}"><i class="bi bi-eye me-2 text-primary"></i> View Insights</a></li>
+                <li><a class="dropdown-item small rounded-2" href="{% url 'meeting_edit' meeting.pk %}"><i class="bi bi-pencil me-2 text-info"></i> Edit</a></li>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li>
+                  <button type="button" class="dropdown-item small text-danger rounded-2" data-bs-toggle="modal" data-bs-target="#globalDeleteModal" data-delete-url="{% url 'meeting_delete' meeting.pk %}" data-item-name="{{ meeting.title }}">
+                    <i class="bi bi-trash me-2"></i> Delete
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card card-custom text-center py-5 shadow-xs">
+      <div class="rounded-circle bg-primary-subtle text-primary p-4 d-inline-flex mb-3 mx-auto">
+        <i class="bi bi-calendar-x fs-1"></i>
+      </div>
+      <h4 class="fw-bold mb-1">No Meetings Found</h4>
+      <p class="text-muted small mb-3">
+        {% if query or selected_type or date_filter %}
+        No meetings match your active filters. Try resetting the search.
+        {% else %}
+        You haven't recorded any meetings yet. Create one now and unleash AI note intelligence!
+        {% endif %}
+      </p>
+      {% if query or selected_type or date_filter %}
+      <a href="{% url 'meeting_list' %}" class="btn btn-secondary-custom btn-sm">Reset Filters</a>
+      {% else %}
+      <a href="{% url 'meeting_create' %}" class="btn btn-primary-gradient btn-sm btn-hover-effect">
+        <i class="bi bi-plus-lg me-1"></i> Create First Meeting
+      </a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

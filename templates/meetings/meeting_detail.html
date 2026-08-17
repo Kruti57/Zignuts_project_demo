@@ -1,0 +1,436 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ meeting.title }} - SyncMind AI{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+  <!-- Header Card -->
+  <div class="col-12 animate-fade-up">
+    <div class="card card-custom p-4 p-lg-5">
+      <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+        <div>
+          <!-- Breadcrumb & Badges -->
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+            <a href="{% url 'meeting_list' %}" class="text-muted text-decoration-none small">
+              <i class="bi bi-arrow-left me-1"></i> Meetings
+            </a>
+            <span class="text-muted">&bull;</span>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1">
+              {{ meeting.get_meeting_type_display }}
+            </span>
+            <span class="text-muted small"><i class="bi bi-calendar3 me-1"></i> {{ meeting.date|date:"F j, Y" }}</span>
+          </div>
+
+          <h1 class="fw-bold mb-2 text-main display-6">{{ meeting.title }}</h1>
+
+          <!-- Participants Chips -->
+          {% if meeting.participants_list %}
+          <div class="d-flex flex-wrap align-items-center gap-1 mt-2">
+            <span class="text-muted smaller me-1"><i class="bi bi-people me-1"></i> Participants:</span>
+            {% for p in meeting.participants_list %}
+            <span class="badge bg-secondary-subtle text-secondary rounded-pill small px-2 py-1">
+              <i class="bi bi-person me-1"></i>{{ p }}
+            </span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Action Controls -->
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+          <a href="{% url 'meeting_edit' meeting.pk %}" class="btn btn-secondary-custom btn-sm d-flex align-items-center gap-1">
+            <i class="bi bi-pencil"></i> Edit Meeting
+          </a>
+          <button type="button" class="btn btn-outline-danger btn-sm px-3" data-bs-toggle="modal" data-bs-target="#globalDeleteModal" data-delete-url="{% url 'meeting_delete' meeting.pk %}" data-item-name="{{ meeting.title }}">
+            <i class="bi bi-trash me-1"></i> Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Insights Section (Left) -->
+  <div class="col-12 col-xl-7 animate-slide-left stagger-1">
+    <div class="card card-custom h-100">
+      <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+          <div class="rounded-3 p-1 text-white d-flex align-items-center justify-content-center shadow-xs" style="background: var(--brand-gradient); width: 28px; height: 28px;">
+            <i class="bi bi-stars" style="font-size: 0.9rem;"></i>
+          </div>
+          <h5 class="fw-bold mb-0">AI Meeting Insights</h5>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+          <span id="ai-provider-badge" class="badge {% if insights %}bg-primary-subtle text-primary border border-primary-subtle{% else %}d-none{% endif %}">
+            {{ insights.ai_provider|upper }}
+          </span>
+          <button type="button" class="btn btn-primary-gradient btn-sm d-flex align-items-center gap-1 btn-hover-effect" id="btn-generate-ai" data-meeting-id="{{ meeting.id }}">
+            <i class="bi bi-arrow-clockwise"></i> {% if insights %}Regenerate Insights{% else %}Generate AI Insights{% endif %}
+          </button>
+        </div>
+      </div>
+
+      <div class="card-body p-4">
+
+        <!-- 1. AI Loading State -->
+        <div id="ai-loading-state" class="d-none py-5 text-center">
+          <div class="position-relative d-inline-block mb-3">
+            <div class="spinner-border text-primary" style="width: 3.5rem; height: 3.5rem; border-width: 0.25rem;" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <i class="bi bi-stars text-primary position-absolute top-50 start-50 translate-middle fs-4"></i>
+          </div>
+          <h5 class="fw-bold mb-2">Analyzing Meeting Transcript...</h5>
+          <p class="text-muted small mb-4">Our AI pipeline is reading context, extracting decisions, and deriving action items.</p>
+
+          <div class="d-inline-flex flex-column text-start gap-2 p-3 rounded-4 bg-card-alt border mx-auto shadow-xs" style="min-width: 300px;">
+            <div id="ai-step-1" class="d-flex align-items-center gap-2 text-muted small"><span class="ai-step-beacon"></span> Parsing speakers &amp; transcript structure</div>
+            <div id="ai-step-2" class="d-flex align-items-center gap-2 text-muted small"><span class="ai-step-beacon"></span> Synthesizing executive summary &amp; points</div>
+            <div id="ai-step-3" class="d-flex align-items-center gap-2 text-muted small"><span class="ai-step-beacon"></span> Detecting decisions &amp; risk factors</div>
+            <div id="ai-step-4" class="d-flex align-items-center gap-2 text-muted small"><span class="ai-step-beacon"></span> Formatting structured action deliverables</div>
+          </div>
+        </div>
+
+        <!-- 2. AI Empty State (when no insights generated yet) -->
+        <div id="ai-empty-state" class="{% if insights %}d-none{% else %}d-block{% endif %} text-center py-5">
+          <div class="rounded-circle bg-primary-subtle text-primary p-4 d-inline-flex mb-3 shadow-xs animate-pulse-glow">
+            <i class="bi bi-stars fs-1"></i>
+          </div>
+          <h4 class="fw-bold mb-2">No AI Insights Generated Yet</h4>
+          <p class="text-muted small mb-4" style="max-width: 440px; margin: 0 auto;">
+            Transform this transcript into executive summaries, key decisions, discussion themes, risks, and structured action items with one click.
+          </p>
+          <button type="button" class="btn btn-primary-gradient btn-md px-4 btn-hover-effect" onclick="document.getElementById('btn-generate-ai').click();">
+            <i class="bi bi-magic me-1"></i> Generate AI Insights Now
+          </button>
+        </div>
+
+        <!-- 3. AI Results Container -->
+        <div id="ai-results-container" class="{% if not insights %}d-none{% endif %}">
+          <!-- Executive Summary -->
+          <div class="insight-card mb-3" style="background: var(--brand-gradient-subtle);">
+            <div class="d-flex align-items-center gap-2 mb-2 text-primary fw-bold small">
+              <i class="bi bi-file-text-fill"></i> EXECUTIVE SUMMARY
+            </div>
+            <p class="text-main mb-0 leading-relaxed" id="insight-summary-text">
+              {{ insights.summary|default:"No summary available." }}
+            </p>
+          </div>
+
+          <!-- Key Decisions -->
+          <div class="insight-card decision mb-3">
+            <div class="d-flex align-items-center gap-2 mb-2 text-success fw-bold small">
+              <i class="bi bi-check-circle-fill"></i> KEY DECISIONS
+            </div>
+            <ul class="list-group list-group-flush" id="insight-decisions-list">
+              {% for dec in insights.key_decisions %}
+              <li class="list-group-item d-flex align-items-start gap-2 bg-transparent px-0 py-1 border-0">
+                <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                <div class="small fw-medium">{{ dec }}</div>
+              </li>
+              {% empty %}
+              <li class="text-muted small">No specific decisions recorded.</li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          <!-- Discussion Points -->
+          <div class="insight-card mb-3">
+            <div class="d-flex align-items-center gap-2 mb-2 text-primary fw-bold small">
+              <i class="bi bi-chat-left-quote-fill"></i> DISCUSSION POINTS
+            </div>
+            <ul class="list-group list-group-flush" id="insight-discussion-list">
+              {% for dp in insights.discussion_points %}
+              <li class="list-group-item d-flex align-items-start gap-2 bg-transparent px-0 py-1 border-0">
+                <i class="bi bi-chat-left-quote text-primary mt-1"></i>
+                <div class="small">{{ dp }}</div>
+              </li>
+              {% empty %}
+              <li class="text-muted small">No discussion points listed.</li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          <!-- Risks and Unanswered Questions Row -->
+          <div class="row g-3 mb-3">
+            <div class="col-12 col-md-6">
+              <div class="insight-card risk h-100 mb-0">
+                <div class="d-flex align-items-center gap-2 mb-2 text-warning fw-bold small">
+                  <i class="bi bi-exclamation-triangle-fill"></i> RISKS &amp; CONCERNS
+                </div>
+                <ul class="list-group list-group-flush" id="insight-risks-list">
+                  {% for risk in insights.risks_and_concerns %}
+                  <li class="list-group-item d-flex align-items-start gap-2 bg-transparent px-0 py-1 border-0">
+                    <i class="bi bi-exclamation-triangle-fill text-warning mt-1 small"></i>
+                    <div class="small">{{ risk }}</div>
+                  </li>
+                  {% empty %}
+                  <li class="text-muted small">None identified.</li>
+                  {% endfor %}
+                </ul>
+              </div>
+            </div>
+
+            <div class="col-12 col-md-6">
+              <div class="insight-card question h-100 mb-0">
+                <div class="d-flex align-items-center gap-2 mb-2 text-info fw-bold small">
+                  <i class="bi bi-question-circle-fill"></i> UNANSWERED QUESTIONS
+                </div>
+                <ul class="list-group list-group-flush" id="insight-questions-list">
+                  {% for q in insights.unanswered_questions %}
+                  <li class="list-group-item d-flex align-items-start gap-2 bg-transparent px-0 py-1 border-0">
+                    <i class="bi bi-question-circle-fill text-info mt-1 small"></i>
+                    <div class="small">{{ q }}</div>
+                  </li>
+                  {% empty %}
+                  <li class="text-muted small">None identified.</li>
+                  {% endfor %}
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Extracted Action Deliverables Table -->
+          <div class="insight-card action mb-0">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="d-flex align-items-center gap-2 text-info-emphasis fw-bold small">
+                <i class="bi bi-list-check"></i> EXTRACTED ACTION DELIVERABLES
+              </div>
+              <button type="button" class="btn btn-primary-gradient btn-sm py-1 px-3 small btn-hover-effect" id="btn-extract-all-actions" data-meeting-id="{{ meeting.id }}">
+                <i class="bi bi-plus-circle-fill me-1"></i> Save All to Tracker
+              </button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-sm tracker-table mb-0">
+                <thead>
+                  <tr>
+                    <th>Task Description</th>
+                    <th>Owner</th>
+                    <th>Due Date</th>
+                    <th>Priority</th>
+                    <th class="text-end">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="insight-actions-table-body">
+                  {% if insights.raw_ai_response.action_items %}
+                    {% for act in insights.raw_ai_response.action_items %}
+                    <tr>
+                      <td><div class="fw-semibold small">{{ act.task }}</div></td>
+                      <td><span class="badge bg-secondary-subtle text-secondary small"><i class="bi bi-person me-1"></i>{{ act.owner }}</span></td>
+                      <td><span class="small text-muted"><i class="bi bi-calendar3 me-1"></i>{{ act.due_date }}</span></td>
+                      <td>
+                        <span class="badge {% if act.priority == 'HIGH' %}bg-danger-subtle text-danger{% elif act.priority == 'LOW' %}bg-info-subtle text-info{% else %}bg-warning-subtle text-warning-emphasis{% endif %} small">
+                          <span class="priority-dot priority-dot-{{ act.priority|lower }} me-1"></span>{{ act.priority }}
+                        </span>
+                      </td>
+                      <td class="text-end">
+                        <button class="btn btn-sm btn-outline-primary py-0 px-2 small extract-single-action-btn" data-action-index="{{ forloop.counter0 }}">
+                          <i class="bi bi-plus-circle me-1"></i> Save
+                        </button>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  {% else %}
+                    <tr>
+                      <td colspan="5" class="text-center text-muted small py-3">No action items detected yet. Click Generate AI Insights.</td>
+                    </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Transcript & Linked Action Items (Right) -->
+  <div class="col-12 col-xl-5 animate-slide-right stagger-2">
+    <div class="d-flex flex-column gap-4 h-100">
+
+      <!-- Raw Transcript Card -->
+      <div class="card card-custom">
+        <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-file-earmark-text text-primary fs-5"></i>
+            <h5 class="fw-bold mb-0">Meeting Transcript</h5>
+          </div>
+          <button type="button" class="btn btn-secondary-custom btn-sm" onclick="copyToClipboard(document.getElementById('transcript-content').innerText, this);">
+            <i class="bi bi-clipboard me-1"></i> Copy
+          </button>
+        </div>
+
+        <div class="card-body p-3">
+          <div class="p-3 rounded-4 bg-card-alt border overflow-auto small" id="transcript-content" style="max-height: 280px; white-space: pre-wrap; font-family: inherit; line-height: 1.6;">{{ meeting.transcript|striptags|default:"No transcript recorded for this meeting." }}</div>
+        </div>
+      </div>
+
+      <!-- Linked Action Items in Database -->
+      <div class="card card-custom flex-grow-1">
+        <div class="card-header card-header-custom d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-check2-square text-success fs-5"></i>
+            <h5 class="fw-bold mb-0">Saved Action Items ({{ action_items.count }})</h5>
+          </div>
+          <button type="button" class="btn btn-secondary-custom btn-sm" data-bs-toggle="modal" data-bs-target="#quickAddActionModal">
+            <i class="bi bi-plus-lg me-1"></i> Add Action
+          </button>
+        </div>
+
+        <div class="card-body p-0">
+          {% if action_items %}
+          <div class="list-group list-group-flush">
+            {% for act in action_items %}
+            <div class="list-group-item p-3 border-bottom bg-transparent" id="action-row-{{ act.id }}">
+              <div class="d-flex justify-content-between align-items-start gap-2 mb-1">
+                <span class="badge {{ act.priority_badge_class }} small">
+                  <span class="priority-dot priority-dot-{{ act.priority|lower }} me-1"></span>
+                  {{ act.priority }}
+                </span>
+                {% if act.is_overdue %}
+                <span class="badge bg-danger text-white small animate-pulse-glow">OVERDUE</span>
+                {% elif act.due_date %}
+                <span class="small text-muted"><i class="bi bi-calendar3 me-1"></i> {{ act.due_date|date:"M j" }}</span>
+                {% endif %}
+              </div>
+
+              <div class="fw-semibold text-main small mb-2 task-description {% if act.status == 'COMPLETED' %}text-decoration-line-through text-muted{% endif %}">
+                {{ act.task }}
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="smaller text-muted"><i class="bi bi-person me-1"></i> {{ act.owner }}</span>
+
+                <select class="form-select form-select-sm py-0 px-2 small inline-status-select" style="width: auto; height: 26px; font-size: 0.76rem;" data-action-id="{{ act.id }}" data-original-val="{{ act.status }}">
+                  {% for st_val, st_lbl in act.STATUS_CHOICES %}
+                  <option value="{{ st_val }}" {% if act.status == st_val %}selected{% endif %}>{{ st_lbl }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="text-center py-4 px-3">
+            <i class="bi bi-inbox text-muted fs-3 d-block mb-2"></i>
+            <p class="text-muted small mb-0">No action items saved in database yet. Extract them from AI insights above or add manually.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- Quick Add Action Modal for this meeting -->
+<div class="modal fade" id="quickAddActionModal" tabindex="-1" aria-labelledby="quickAddActionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content card-custom border-0 shadow-lg">
+      <form method="POST" action="{% url 'action_create' %}">
+        {% csrf_token %}
+        <input type="hidden" name="meeting" value="{{ meeting.id }}">
+        <input type="hidden" name="next" value="{% url 'meeting_detail' meeting.id %}">
+
+        <div class="modal-header border-bottom">
+          <h5 class="modal-title fw-bold" id="quickAddActionModalLabel">Add Action Item</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body py-3">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Task Description <span class="text-danger">*</span></label>
+            <textarea name="task" class="form-control" rows="3" placeholder="Describe the action item..." required></textarea>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold">Assignee / Owner</label>
+              <div class="input-group">
+                <input type="text" name="owner" id="quick-action-owner" class="form-control" placeholder="Assignee (or Unassigned)" value="Unassigned" list="quick-owner-options">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Pick participant">
+                  <i class="bi bi-people-fill text-primary"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-lg p-2 rounded-3 border-0" style="max-height: 240px; overflow-y: auto; z-index: 1060; background: var(--bg-card);">
+                  <li class="dropdown-header smaller text-uppercase fw-bold text-muted px-2 py-1">Meeting Participants</li>
+                  {% for p in meeting.participants_list %}
+                  <li>
+                    <button type="button" class="dropdown-item small rounded-2 select-owner-btn d-flex align-items-center gap-2 py-2 px-2" data-target-input="quick-action-owner" data-owner-name="{{ p }}" onclick="const inp = document.getElementById('quick-action-owner'); if(inp){ inp.value = '{{ p }}'; inp.dispatchEvent(new Event('input')); inp.dispatchEvent(new Event('change')); }">
+                      <span class="rounded-circle text-white d-flex align-items-center justify-content-center fw-bold shadow-xs" style="width: 22px; height: 22px; font-size: 0.7rem; background: var(--brand-gradient);">
+                        {{ p|first|upper }}
+                      </span>
+                      <span class="fw-medium text-main">{{ p }}</span>
+                    </button>
+                  </li>
+                  {% endfor %}
+                  <li>
+                    <button type="button" class="dropdown-item small rounded-2 select-owner-btn d-flex align-items-center gap-2 py-2 px-2" data-target-input="quick-action-owner" data-owner-name="Unassigned" onclick="const inp = document.getElementById('quick-action-owner'); if(inp){ inp.value = 'Unassigned'; inp.dispatchEvent(new Event('input')); inp.dispatchEvent(new Event('change')); }">
+                      <span class="rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center fw-bold" style="width: 22px; height: 22px; font-size: 0.7rem;">U</span>
+                      <span class="fw-medium text-main">Unassigned</span>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+              <datalist id="quick-owner-options">
+                {% for p in meeting.participants_list %}
+                <option value="{{ p }}"></option>
+                {% endfor %}
+                <option value="Unassigned"></option>
+              </datalist>
+            </div>
+            <div class="col-12 col-sm-6">
+              <label class="form-label small fw-semibold">Due Date</label>
+              <input type="date" name="due_date" class="form-control">
+            </div>
+          </div>
+
+          <div class="row g-2">
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Priority</label>
+              <select name="priority" class="form-select">
+                <option value="LOW">Low</option>
+                <option value="MEDIUM" selected>Medium</option>
+                <option value="HIGH">High</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Status</label>
+              <select name="status" class="form-select">
+                <option value="OPEN" selected>Open</option>
+                <option value="IN_PROGRESS">In Progress</option>
+                <option value="BLOCKED">Blocked</option>
+                <option value="COMPLETED">Completed</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer border-top">
+          <button type="button" class="btn btn-secondary-custom btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary-gradient btn-sm px-4">Create Action</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ preloaded_actions|json_script:"preloaded-ai-actions" }}
+<script>
+  try {
+    const el = document.getElementById('preloaded-ai-actions');
+    window.__latestAiActions = el ? JSON.parse(el.textContent) : [];
+  } catch (e) {
+    window.__latestAiActions = [];
+  }
+</script>
+<script src="{% static 'js/action_tracker.js' %}"></script>
+<script src="{% static 'js/meeting_editor.js' %}"></script>
+{% endblock %}

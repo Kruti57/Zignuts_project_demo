@@ -1,0 +1,121 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SyncMind AI - Enterprise Meeting Notes, AI Insights & Action Tracker Platform">
+  <meta name="author" content="Zignuts Candidate">
+  <title>{% block title %}SyncMind AI - Meeting Notes & Action Tracker{% endblock %}</title>
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 5.3.3 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+  <!-- Bootstrap Icons 1.11.3 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <!-- Quill.js 1.3.7 Snow Theme CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.snow.css" rel="stylesheet">
+
+  <!-- Custom Stylesheets -->
+  <link rel="stylesheet" href="{% static 'css/theme.css' %}">
+  <link rel="stylesheet" href="{% static 'css/animations.css' %}">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <!-- Ambient Glowing Background Mesh -->
+  <div class="ambient-mesh-container">
+    <div class="ambient-blob ambient-blob-1"></div>
+    <div class="ambient-blob ambient-blob-2"></div>
+    <div class="ambient-blob ambient-blob-3"></div>
+  </div>
+
+  <!-- Navigation Bar -->
+  {% include 'components/navbar.html' %}
+
+  <!-- Flash Messages Toast / Banner -->
+  {% if messages %}
+  <div class="container-fluid px-lg-4 mt-3">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show card-custom border-0 shadow-sm d-flex align-items-center gap-2 py-2 px-3 mb-2" role="alert">
+      {% if message.tags == 'success' %}
+        <i class="bi bi-check-circle-fill text-success fs-5"></i>
+      {% elif message.tags == 'error' or message.tags == 'danger' %}
+        <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
+      {% elif message.tags == 'warning' %}
+        <i class="bi bi-exclamation-circle-fill text-warning fs-5"></i>
+      {% else %}
+        <i class="bi bi-info-circle-fill text-primary fs-5"></i>
+      {% endif %}
+      <div class="flex-grow-1 small">{{ message }}</div>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Main Content Area -->
+  <main class="py-4">
+    <div class="container-fluid px-lg-4">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <!-- Global Delete Confirmation Modal -->
+  <div class="modal fade" id="globalDeleteModal" tabindex="-1" aria-labelledby="globalDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content card-custom border-0 shadow-lg">
+        <div class="modal-header border-0 pb-0">
+          <div class="rounded-circle bg-danger-subtle text-danger p-2 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+            <i class="bi bi-trash-fill fs-5"></i>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body py-3">
+          <h5 class="fw-bold mb-2" id="globalDeleteModalLabel">Confirm Deletion</h5>
+          <p class="text-muted small mb-0">
+            Are you sure you want to delete <strong id="globalDeleteItemName" class="text-main">this item</strong>? This action cannot be undone.
+          </p>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-secondary-custom btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+          <form id="globalDeleteForm" method="POST" action="">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-sm px-3">Delete Permanently</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1090;"></div>
+
+  <!-- Footer -->
+  {% include 'components/footer.html' %}
+
+  <!-- Bootstrap 5.3.3 Bundle JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+  <!-- Quill.js 1.3.7 -->
+  <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+
+  <!-- Custom Core Scripts -->
+  <script src="{% static 'js/theme.js' %}"></script>
+  <script src="{% static 'js/animations.js' %}"></script>
+  <script src="{% static 'js/main.js' %}"></script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

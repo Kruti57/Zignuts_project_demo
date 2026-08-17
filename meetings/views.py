@@ -80,7 +80,11 @@ def meeting_create_view(request):
 
 @login_required
 def meeting_detail_view(request, pk):
-    meeting = get_object_or_404(Meeting, pk=pk, user=request.user)
+    meeting = Meeting.objects.filter(pk=pk, user=request.user).first()
+    if not meeting:
+        messages.warning(request, "The requested meeting was not found or was recently refreshed. Redirected to Meetings.")
+        return redirect('meeting_list')
+
     insights = getattr(meeting, 'insights', None)
     action_items = meeting.action_items.all().order_by('-created_at')
     
@@ -98,7 +102,10 @@ def meeting_detail_view(request, pk):
 
 @login_required
 def meeting_edit_view(request, pk):
-    meeting = get_object_or_404(Meeting, pk=pk, user=request.user)
+    meeting = Meeting.objects.filter(pk=pk, user=request.user).first()
+    if not meeting:
+        messages.warning(request, "The requested meeting was not found. Redirected to Meetings.")
+        return redirect('meeting_list')
 
     if request.method == 'POST':
         form = MeetingForm(request.POST, request.FILES, instance=meeting)
@@ -129,7 +136,10 @@ def meeting_edit_view(request, pk):
 @login_required
 @require_POST
 def meeting_delete_view(request, pk):
-    meeting = get_object_or_404(Meeting, pk=pk, user=request.user)
+    meeting = Meeting.objects.filter(pk=pk, user=request.user).first()
+    if not meeting:
+        messages.warning(request, "The meeting was already deleted or not found.")
+        return redirect('meeting_list')
     title = meeting.title
     meeting.delete()
     messages.success(request, f"Meeting '{title}' and all associated insights were deleted.")

@@ -108,7 +108,10 @@ def action_create_view(request):
 
 @login_required
 def action_edit_view(request, pk):
-    action = get_object_or_404(ActionItem, pk=pk, user=request.user)
+    action = ActionItem.objects.filter(pk=pk, user=request.user).first()
+    if not action:
+        messages.warning(request, "The requested action item was not found (it may have been updated or removed).")
+        return redirect('action_tracker')
 
     if request.method == 'POST':
         form = ActionItemForm(request.POST, instance=action, user=request.user)
@@ -118,7 +121,7 @@ def action_edit_view(request, pk):
             next_url = request.POST.get('next') or request.GET.get('next') or 'action_tracker'
             return redirect(next_url)
         else:
-            messages.error(request, "Failed to update action item.")
+            messages.error(request, "Failed to update action item. Please check inputs.")
     else:
         form = ActionItemForm(instance=action, user=request.user)
 
@@ -132,7 +135,10 @@ def action_edit_view(request, pk):
 @login_required
 @require_POST
 def action_delete_view(request, pk):
-    action = get_object_or_404(ActionItem, pk=pk, user=request.user)
+    action = ActionItem.objects.filter(pk=pk, user=request.user).first()
+    if not action:
+        messages.warning(request, "The action item was already removed or not found.")
+        return redirect('action_tracker')
     task_desc = action.task[:30]
     action.delete()
     messages.success(request, f"Action item '{task_desc}...' deleted.")
